@@ -480,4 +480,206 @@
                         element.innerHTML = '<p>Starting... (should only take a few seconds)</p>';
                     }
                 } else {
-                    console.warn(`Element not found with Hugging Face: ${Object.keys(element
+                    console.warn(`Element not found with Hugging Face: ${Object.keys(elements)[Object.values(elements).indexOf(element)]}`);
+                }
+            });
+            generatedImages = []; // Reset saved images
+            console.log('Form reset successfully with Hugging Face');
+        }
+
+        // Utility Functions for Navigation (Optional Modals)
+        function showPrivacy() {
+            alert('Privacy Policy: We respect your privacy. This tool uses Hugging Face directly for testing (API key exposed), but for production, use a secure proxy. No personal data is stored beyond local usage counts.');
+        }
+
+        function showAbout() {
+            alert('About Us: Juru Smart Tool offers an AI Character Generator using Hugging Face for real-time image generation. For production, secure your API key with a proxy or backend server.');
+        }
+
+        function showContact() {
+            alert('Contact Us: Email: support@jurusmarttool.com');
+        }
+
+        // Hugging Face Image Generation Functions (Direct Integration for Testing)
+        // WARNING: This exposes your API key in client-side code. Use a proxy for production.
+        const HUGGING_FACE_API_KEY = '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'; // Add your API key here for testing
+
+        async function generateCharacter() {
+            const description = document.getElementById('character-description')?.value;
+            const antiDescription = document.getElementById('anti-description')?.value || '';
+            const artStyle = document.getElementById('art-style')?.value || 'cute-3d-icon';
+            const shape = document.getElementById('shape')?.value || 'square';
+            const aspectRatio = document.getElementById('aspect-ratio')?.value || '1:1';
+            const quantity = document.getElementById('quantity')?.value || '1';
+            const output = document.getElementById('character-output');
+
+            if (!description || !artStyle || !shape || !aspectRatio) {
+                if (output) {
+                    output.innerHTML = '<p>Please fill in all required fields with Hugging Face!</p>';
+                } else {
+                    console.error('Character output element not found with Hugging Face');
+                }
+                return;
+            }
+
+            if (output) {
+                output.innerHTML = '<p>Starting... (should only take a few seconds)</p>';
+                const images = [];
+                const delay = 2000; // Base delay per image to simulate API processing
+                for (let i = 0; i < parseInt(quantity); i++) {
+                    setTimeout(async () => {
+                        try {
+                            const prompt = `${description}, ${artStyle} style, ${shape} shape, ${aspectRatio} aspect ratio${antiDescription ? ', avoid: ' + antiDescription : ''}`;
+                            let width, height;
+                            switch (aspectRatio) {
+                                case '1:1': width = 512; height = 512; break;
+                                case '4:3': width = 640; height = 480; break;
+                                case '16:9': width = 640; height = 360; break;
+                                case '3:2': width = 600; height = 400; break;
+                                case '9:16': width = 360; height = 640; break;
+                                case '2:3': width = 400; height = 600; break;
+                                case '5:4': width = 500; height = 400; break;
+                                case '21:9': width = 672; height = 288; break;
+                                default: width = 512; height = 512;
+                            }
+                            const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-1024-v1-0', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    inputs: prompt,
+                                    parameters: {
+                                        width: width,
+                                        height: height,
+                                        steps: 50,
+                                        guidance_scale: 7.5,
+                                        negative_prompt: antiDescription
+                                    }
+                                })
+                            });
+
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`Hugging Face request failed: ${response.status} - ${errorText}`);
+                            }
+
+                            const data = await response.json();
+                            const imageUrl = `data:image/png;base64,${data[0]}`;
+
+                            images.push(`<img src="${imageUrl}" alt="Generated Character with Hugging Face #${i + 1}" style="max-width: 100%; margin: 15px 0;"><button class="download-btn" onclick="downloadImage('${imageUrl}', ${i + 1})">Download Image</button>`);
+                            if (i === parseInt(quantity) - 1) {
+                                output.innerHTML = images.join('') + '<p>Generation complete with Hugging Face!</p>';
+                                generatedImages = [...generatedImages, ...images.map(img => img.match(/src="([^"]+)"/)[1])];
+                                console.log(`Characters generated successfully with Hugging Face: style: ${artStyle}, shape: ${shape}, aspect ratio: ${aspectRatio}, quantity: ${quantity}`);
+                            }
+                        } catch (error) {
+                            console.error('Character generation error with Hugging Face:', error);
+                            images.push(`<p>Failed to generate image #${i + 1}: ${error.message}</p>`);
+                            if (i === parseInt(quantity) - 1) {
+                                output.innerHTML = images.join('') + '<p>Some generations failed with Hugging Face!</p>';
+                            }
+                        }
+                    }, delay * (i + 1)); // Staggered delay for multiple images
+                }
+            } else {
+                console.error('Character output element not found with Hugging Face');
+                alert('Error: Could not generate character with Hugging Face. Check console for details.');
+            }
+        }
+
+        function randomizeDescription() {
+            const descriptions = [
+                'magic wand, sprinkling stardust',
+                'cybernetic dragon rider, gliding over a post-apocalyptic wasteland',
+                'mystical unicorn, galloping through enchanted forests',
+                'robotic knight, battling in a futuristic arena',
+                'fairy queen, casting spells under a moonlit sky'
+            ];
+            const description = document.getElementById('character-description');
+            if (description) {
+                description.value = descriptions[Math.floor(Math.random() * descriptions.length)];
+                console.log('Description randomized successfully with Hugging Face');
+            } else {
+                console.error('Description element not found with Hugging Face');
+                alert('Error: Could not randomize description with Hugging Face. Check console for details.');
+            }
+        }
+
+        function suggestDescription() {
+            const description = document.getElementById('character-description')?.value || 'an AI character';
+            const output = document.getElementById('character-output');
+
+            if (output) {
+                output.innerHTML = '<p>Suggesting description with Hugging Face...</p>';
+                const suggestion = `Enhance ${description.toLowerCase()} with vibrant colors and dynamic poses, perfect for illustrations.`;
+                setTimeout(() => {
+                    output.innerHTML = `<p>Suggestion: ${suggestion}</p><button onclick="useSuggestion()">Use This Suggestion</button>`;
+                    console.log('Description suggested successfully with Hugging Face');
+                }, 1000); // Simulate initial delay
+            } else {
+                console.error('Character output element not found with Hugging Face');
+                alert('Error: Could not suggest description with Hugging Face. Check console for details.');
+            }
+        }
+
+        function useSuggestion() {
+            const output = document.getElementById('character-output');
+            const characterDescription = document.getElementById('character-description');
+
+            if (output && characterDescription) {
+                const suggestionText = output.querySelector('p')?.textContent.replace('Suggestion: ', '') || '';
+                characterDescription.value = suggestionText;
+                output.innerHTML = '<p>Starting... (should only take a few seconds)</p>';
+                console.log('Suggestion applied to description successfully with Hugging Face');
+            } else {
+                console.error('Character output or description element not found with Hugging Face');
+                alert('Error: Could not apply suggestion with Hugging Face. Check console for details.');
+            }
+        }
+
+        function shareSettings() {
+            const description = document.getElementById('character-description')?.value || '';
+            const antiDescription = document.getElementById('anti-description')?.value || '';
+            const artStyle = document.getElementById('art-style')?.value || '';
+            const shape = document.getElementById('shape')?.value || '';
+            const aspectRatio = document.getElementById('aspect-ratio')?.value || '';
+            const quantity = document.getElementById('quantity')?.value || '1';
+
+            const settings = `Description: ${description}\nAnti-Description: ${antiDescription}\nArt Style: ${artStyle}\nShape: ${shape}\nAspect Ratio: ${aspectRatio}\nQuantity: ${quantity}`;
+            const encodedSettings = encodeURIComponent(settings);
+            const shareUrl = `${window.location.origin}${window.location.pathname}?settings=${encodedSettings}`;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert('Settings link copied to clipboard! Share this URL to replicate your settings.');
+                    console.log('Settings shared successfully with Hugging Face');
+                }).catch(err => {
+                    console.error('Failed to copy settings link with Hugging Face:', err);
+                    alert('Failed to copy settings. Please manually copy this URL: ' + shareUrl);
+                });
+            } else {
+                alert('Copy this URL to share your settings: ' + shareUrl);
+                console.log('Web clipboard not supported, showing alert for settings with Hugging Face');
+            }
+        }
+
+        function downloadImage(imageUrl, index) {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = `huggingface_character_${index}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            console.log(`Image ${index} downloaded successfully with Hugging Face`);
+            alert(`Image ${index} downloaded as 'huggingface_character_${index}.png'`);
+        }
+
+        function provideFeedback() {
+            alert('Thank you for your feedback! Please email us at support@jurusmarttool.com with your suggestions.');
+            console.log('Feedback requested successfully with Hugging Face');
+        }
+    </script>
+</body>
+</html>
